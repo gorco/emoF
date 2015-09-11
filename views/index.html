@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Una plantilla para usar JQuery</title>
+    <link href="javascripts/jquery-ui-1.11.2/jquery-ui.min.css" rel="stylesheet">
+    <style>
+        button.sendToServer {
+            font-size: 1000%;
+        }
+
+        input {
+            width: 300px;
+        }
+
+        div.k {
+            width: 100px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+    </style>
+    <script src="javascripts/jquery-ui-1.11.2/external/jquery/jquery.js"></script>
+    <script src="javascripts/jquery-ui-1.11.2/jquery-ui.min.js"></script>
+    <script>
+        $(function () {
+            // authenticate with server
+            var o = {};
+
+            function doLogin(serverUrl, login, pass) {
+                console.log(serverUrl, login, pass);
+                o.serverUrl = serverUrl;
+                o.login = login;
+                $.ajax({type: "post",
+                        url: o.serverUrl + '/login',
+                        data: {
+                            "username": login,
+                            "password": pass
+                        },
+                        success: function (data) {
+                            o.token = data.user.token;
+                            console.log("logged in!", data, o.token);
+                        }
+                });
+            }
+
+            // send emotion to server
+            function reportEmotion(emotion) {
+                var toSend = {type: "post",
+                    url: o.serverUrl + "/proxy/emotions/emotions",
+                    header: { authorization : "Bearer " + o.token },
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        "actor": {
+                            "objectType": "Agent",
+                            "name": o.login,
+                            "mbox": "mailto:user@example.com"
+                        },
+                        "verb": {
+                            "id": "http://adlnet.gov/expapi/verbs/felt",
+                            "display": {"en-US": "felt"}
+                        },
+                        "object": {
+                            "id": "http://acme.inc/xapi/emotions/" + emotion
+                        }
+                    }),
+                    success: function(data) {
+                        console.log("data sent OK: ", data);
+                    }
+                };
+                console.log("sending ... ", toSend);
+                $.ajax(toSend);
+            }
+
+            // bind emotion buttons
+            $("button.sendToServer").click(function () {
+                reportEmotion($(this).attr("id"));
+            });
+
+            // bind connect button
+            $("button.login").click(function () {
+                doLogin(
+                        $("#server").val(),
+                        $("#login").val(),
+                        $("#pass").val());
+            });
+        })
+    </script>
+</head>
+<body>
+
+<h1>ACME Inc. Emotion Detection Device</h1>
+
+<h2>Setup</h2>
+
+<form action='#'>
+    <div class="k">Server</div>
+    <input id="server" value="http://localhost:3000/api" input/>
+    <br>
+
+    <div class="k">User</div>
+    <input id="login" value="emotions" input/>
+    <br>
+
+    <div class="k">Pass</div>
+    <input id="pass" type="password" value="emotions" input/>
+    <br>
+    <button class="login">Connect to Server</button>
+</form>
+
+<h2>Detection device</h2>
+
+<button class="sendToServer" id="happy">
+    &#128515;
+</button>
+
+<button class="sendToServer" id="swell">
+    &#128528;
+</button>
+
+<button class="sendToServer" id="sad">
+    &#128542;
+</button>
+
+</body>
+</html>
+
+
